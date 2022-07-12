@@ -11,11 +11,12 @@ always@(posedge clk or negedge rst_n)begin
     if(!rst_n)begin
         {full,empty}<=2'b01;
         wptr<=4'b0000;
+        dout<=8'bzzzzzzzz;
     end
     else if((wptr==15)&&(full==1)&&we)begin
         full<=1;
     end
-    else if((wptr==15)&&(full)&&we)begin
+    else if((wptr==15)&&(!full)&&we)begin
         full<=1;
         ram[wptr]<=din;
     end
@@ -24,23 +25,26 @@ always@(posedge clk or negedge rst_n)begin
         wptr++;
     end
     else if((wptr!=0)&&re)begin
+        dout<=ram[0];
         ram<={ram[1:15],1'bz};
         wptr--;
     end
-    else if((wptr==0)&&re)begin
-        empty<=1;
+    else if((wptr==0)&&re&empty)begin
+      dout<=8'bzzzzzzzz;  
+      empty<=1;
     end
+    else if((wptr==0)&&re&(!empty))begin
+      dout<=ram[0];
+      ram<={ram[1:15],1'bz};
+      empty<=1;
+     end
+     else if(!re)
+       dout<=8'bzzzzzzzz;
 end
 always@(posedge clk)begin
     if(we)
         empty<=0;
     if(re)
         full<=0;
-end
-always@(posedge clk)begin
-    if(!rst_n)
-        dout<=8'bzzzzzzzz;
-    else
-        dout<=ram[wptr];
 end
 endmodule
